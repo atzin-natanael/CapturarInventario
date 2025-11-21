@@ -9,6 +9,7 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using System.Net.Mail;
 using System.Net;
 using DocumentFormat.OpenXml.Drawing.Diagrams;
+using Inventario.Properties;
 
 namespace Inventario
 {
@@ -16,14 +17,19 @@ namespace Inventario
     {
 
         List<string> nombresArray = new List<string>();
+        bool Active = false;
         public Form1()
         {
             InitializeComponent();
             GlobalSettings.Instance.Ruta = "C:\\Inventario\\Inv.xlsx";
             Config();
             Zonas();
-            Cb_Zonas.SelectedIndex = -1;
-            Cb_Zonas.Select();
+            Design();
+            Cb_Colector.Select();
+        }
+        public void Design()
+        {
+            panelSubmenu.Visible = false;
         }
         public void Zonas()
         {
@@ -85,7 +91,7 @@ namespace Inventario
 
                 // Parámetros de entrada
                 command.Parameters.Add("V_ARTICULO_ID", FbDbType.Integer).Value = articulo_id;
-                command.Parameters.Add("V_ALMACEN_ID", FbDbType.Integer).Value = 108404; //peri
+                command.Parameters.Add("V_ALMACEN_ID", FbDbType.Integer).Value = 108403; //peri
                 //command.Parameters.Add("V_ALMACEN_ID", FbDbType.Integer).Value = 108405; culiacan
                 command.Parameters.Add("V_FECHA", FbDbType.Date).Value = DateTime.Today;
                 command.Parameters.Add("V_ES_ULTIMO_COSTO", FbDbType.Char).Value = 'S';
@@ -287,38 +293,38 @@ namespace Inventario
                             TxtCodigo.Select(0, TxtCodigo.Text.Length);
                             return;
                         }
-                    // Tabla para almacenar los datos
-                    // Muestra los resultados
-                    SQLitePCL.Batteries.Init();
-                    foreach (DataRow fila in datos.Rows)
-                    {
-                        GlobalSettings.Instance.posicion += 1;
-                        DataSet.Rows.Add(GlobalSettings.Instance.posicion, fila.ItemArray[2], fila.ItemArray[1], fila.ItemArray[4], fila.ItemArray[3]);
-                        DataSet.Rows[GlobalSettings.Instance.posicion - 1].Height = 40;
-                        encontrado = true;
-                        string textoAAgregar = fila.ItemArray[2].ToString() + ", " + fila.ItemArray[3];
-                        using (SqliteConnection conect = new SqliteConnection("Data Source=C:\\Inventario\\" + Cb_Zonas.Text + ".db;"))
+                        // Tabla para almacenar los datos
+                        // Muestra los resultados
+                        SQLitePCL.Batteries.Init();
+                        foreach (DataRow fila in datos.Rows)
                         {
-                            conect.Open();
-                            string crearTablaQuery = "CREATE TABLE IF NOT EXISTS Articulos (ID INTEGER, Codigo TEXT, Descripcion TEXT, Existencia NUMERIC, Cantidad INTEGER, Zona TEXT, Colector TEXT)";
-                            SqliteCommand crearTablaCommand = new SqliteCommand(crearTablaQuery, conect);
-                            crearTablaCommand.ExecuteNonQuery();
+                            GlobalSettings.Instance.posicion += 1;
+                            DataSet.Rows.Add(GlobalSettings.Instance.posicion, fila.ItemArray[2], fila.ItemArray[1], fila.ItemArray[4], fila.ItemArray[3]);
+                            DataSet.Rows[GlobalSettings.Instance.posicion - 1].Height = 40;
+                            encontrado = true;
+                            string textoAAgregar = fila.ItemArray[2].ToString() + ", " + fila.ItemArray[3];
+                            using (SqliteConnection conect = new SqliteConnection("Data Source=C:\\Inventario\\" + Cb_Zonas.Text + ".db;"))
+                            {
+                                conect.Open();
+                                string crearTablaQuery = "CREATE TABLE IF NOT EXISTS Articulos (ID INTEGER, Codigo TEXT, Descripcion TEXT, Existencia NUMERIC, Cantidad INTEGER, Zona TEXT, Colector TEXT)";
+                                SqliteCommand crearTablaCommand = new SqliteCommand(crearTablaQuery, conect);
+                                crearTablaCommand.ExecuteNonQuery();
 
-                            string query = "INSERT INTO Articulos (ID, Codigo, Descripcion, Existencia, Cantidad, Zona, Colector) VALUES (@posicion, @valor1, @valor2 , @valor3, @valor4, @valor5, @valor6)";
-                            SqliteCommand command = new SqliteCommand(query, conect);
-                            command.Parameters.AddWithValue("@posicion", GlobalSettings.Instance.posicion);
-                            command.Parameters.AddWithValue("@valor1", fila.ItemArray[2].ToString());
-                            command.Parameters.AddWithValue("@valor2", fila.ItemArray[1]);
-                            command.Parameters.AddWithValue("@valor3", fila.ItemArray[4]);
-                            command.Parameters.AddWithValue("@valor4", fila.ItemArray[3]);
-                            command.Parameters.AddWithValue("@valor5", Cb_Zonas.Text);
-                            command.Parameters.AddWithValue("@valor6", Cb_Colector.Text);
-                            command.ExecuteNonQuery();
-                            conect.Close();
+                                string query = "INSERT INTO Articulos (ID, Codigo, Descripcion, Existencia, Cantidad, Zona, Colector) VALUES (@posicion, @valor1, @valor2 , @valor3, @valor4, @valor5, @valor6)";
+                                SqliteCommand command = new SqliteCommand(query, conect);
+                                command.Parameters.AddWithValue("@posicion", GlobalSettings.Instance.posicion);
+                                command.Parameters.AddWithValue("@valor1", fila.ItemArray[2].ToString());
+                                command.Parameters.AddWithValue("@valor2", fila.ItemArray[1]);
+                                command.Parameters.AddWithValue("@valor3", fila.ItemArray[4]);
+                                command.Parameters.AddWithValue("@valor4", fila.ItemArray[3]);
+                                command.Parameters.AddWithValue("@valor5", Cb_Zonas.Text);
+                                command.Parameters.AddWithValue("@valor6", Cb_Colector.Text);
+                                command.ExecuteNonQuery();
+                                conect.Close();
+                            }
+
+
                         }
-
-
-                    }
                     }
 
                     if (DataSet.Rows.Count > 0)
@@ -355,7 +361,8 @@ namespace Inventario
             if (e.KeyCode == Keys.Enter)
             {
                 e.SuppressKeyPress = true; // Evita que se produzca el sonido de Windows al presionar Enter
-                Ingresar.Focus();
+                //Ingresar.Focus();
+                Ingresar_Click(sender, e);
             }
 
         }
@@ -394,6 +401,7 @@ namespace Inventario
                 {
                     TxtCodigo.Text = string.Empty;
                     TxtCodigo.Focus();
+                    DataSet.ClearSelection();
                 }
 
             }
@@ -433,7 +441,7 @@ namespace Inventario
                 conect.Close();
             }
 
-
+            DataSet.ClearSelection();
             TxtCodigo.Text = String.Empty;
             TxtCodigo.Focus();
         }
@@ -503,7 +511,7 @@ namespace Inventario
         {
             if (e.KeyCode == Keys.Enter)
             {
-                Cb_Colector.Focus();
+                TxtCodigo.Focus();
             }
         }
 
@@ -511,7 +519,7 @@ namespace Inventario
         {
             if (e.KeyCode == Keys.Enter)
             {
-                TxtCodigo.Focus();
+                Cb_Zonas.Focus();
             }
         }
 
@@ -603,7 +611,9 @@ namespace Inventario
                         workbook.SaveAs("C:\\Inventario\\InventarioGeneral.xlsx");
                     }
                 }
-                MessageBox.Show("Guardado con éxito");
+                MensajeOK mensajeOK = new MensajeOK();
+                mensajeOK.texto.Text = "Zona guardada correctamente";
+                mensajeOK.ShowDialog();
                 DataSet.Rows.Clear();
                 Cb_Zonas.Enabled = true;
                 Cb_Colector.Enabled = true;
@@ -615,32 +625,8 @@ namespace Inventario
 
         private void Send_Click(object sender, EventArgs e)
         {
-            try
-            {
-                // Configura los detalles del remitente y destinatario
-                MailMessage mensaje = new MailMessage();
-                mensaje.From = new MailAddress("inventario@papeleriacornejo.com"); // Tu dirección de correo
-                string Vendedor;
-                mensaje.To.Add("sistemas@papeleriacornejo.com"); // Destinatario
-                mensaje.Subject = "Inventario " + DateTime.Now.ToShortDateString;
-                string Excel = "C:\\Inventario\\InventarioGeneral.xlsx";
-                Attachment adjunto = new Attachment(Excel);
-                mensaje.Attachments.Add(adjunto);
-                // Desactiva la validación del certificado para pruebas (no recomendado para producción)
-                System.Net.ServicePointManager.ServerCertificateValidationCallback =
-                    (sender, certificate, chain, sslPolicyErrors) => true;
-
-                // Configuración del cliente SMTP (usando Gmail como ejemplo)
-                SmtpClient clienteSmtp = new SmtpClient("smtp.papeleriacornejo.com", 587); // Servidor SMTP y puerto
-                clienteSmtp.Credentials = new NetworkCredential("inventario@papeleriacornejo.com", "Cornejo2024@"); // Credenciales
-                clienteSmtp.EnableSsl = true; // SSL para una conexión segura
-                                              // Envía el correo
-                clienteSmtp.Send(mensaje);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error.", ex.Message);
-            }
+            MailForm mailForm = new MailForm();
+            mailForm.ShowDialog();
         }
 
         private void DataSet_KeyPress(object sender, KeyPressEventArgs e)
@@ -665,6 +651,147 @@ namespace Inventario
                 MessageBox.Show("Error al cargar el archivo de Excel: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
+        }
+
+        private void btnMenu_Click(object sender, EventArgs e)
+        {
+            if (panelSubmenu.Visible == false)
+            {
+                panelSubmenu.Visible = true;
+                TimeMenu.Start();
+            }
+            else
+            {
+                panelSubmenu.Visible = false;
+            }
+        }
+
+        private void Enviar_MouseEnter(object sender, EventArgs e)
+        {
+            Enviar.ForeColor = System.Drawing.Color.White;
+            Active = true;
+
+        }
+
+        private void Send_MouseEnter(object sender, EventArgs e)
+        {
+            Send.ForeColor = System.Drawing.Color.White;
+            Active = true;
+
+        }
+
+        private void Actualizar_MouseEnter(object sender, EventArgs e)
+        {
+            Actualizar.ForeColor = System.Drawing.Color.White;
+            Active = true;
+        }
+
+        private void Enviar_MouseLeave(object sender, EventArgs e)
+        {
+            Enviar.ForeColor = System.Drawing.Color.Black;
+            Active = false;
+        }
+
+        private void Send_MouseLeave(object sender, EventArgs e)
+        {
+            Send.ForeColor = System.Drawing.Color.Black;
+            Active = false;
+
+        }
+
+        private void Actualizar_MouseLeave(object sender, EventArgs e)
+        {
+            Actualizar.ForeColor = System.Drawing.Color.Black;
+            Active = false;
+
+        }
+
+        private void TimeMenu_Tick(object sender, EventArgs e)
+        {
+            if (!Active)
+            {
+                panelSubmenu.Visible = false;
+                btnMenu.BackColor = System.Drawing.Color.FromArgb(50, 50, 50);
+                TimeMenu.Stop();
+            }
+        }
+
+        private void panelSubmenu_Resize(object sender, EventArgs e)
+        {
+            Cargar.Width = panelSubmenu.Width / 4;
+            Enviar.Width = panelSubmenu.Width / 4;
+            Send.Width = panelSubmenu.Width / 4;
+            Actualizar.Width = panelSubmenu.Width / 4;
+        }
+
+        private void Cargar_MouseEnter(object sender, EventArgs e)
+        {
+            Cargar.ForeColor = System.Drawing.Color.White;
+            Active = true;
+
+        }
+
+        private void Cargar_MouseLeave(object sender, EventArgs e)
+        {
+            Cargar.ForeColor = System.Drawing.Color.Black;
+            Active = false;
+
+        }
+
+        private void btnMenu_MouseEnter(object sender, EventArgs e)
+        {
+            btnMenu.BackColor = System.Drawing.Color.Silver;
+        }
+
+        private void Dark_Click(object sender, EventArgs e)
+        {
+            if(panel1.BackColor == System.Drawing.Color.Beige)
+            {
+                panel1.BackColor = System.Drawing.Color.FromArgb(50, 50, 50);
+                DataSet.BackgroundColor = System.Drawing.Color.FromArgb(50, 50, 50);
+                DataSet.ColumnHeadersDefaultCellStyle.BackColor = System.Drawing.Color.White;
+                DataSet.ColumnHeadersDefaultCellStyle.ForeColor = System.Drawing.Color.Black;
+                DataSet.DefaultCellStyle.BackColor = System.Drawing.Color.FromArgb(50, 50, 50);
+                DataSet.DefaultCellStyle.ForeColor = System.Drawing.Color.White;
+                DataSet.DefaultCellStyle.SelectionBackColor = System.Drawing.Color.FromArgb(100, 100, 100);
+                DataSet.DefaultCellStyle.SelectionForeColor = System.Drawing.Color.White;
+                DataSet.AlternatingRowsDefaultCellStyle.ForeColor = System.Drawing.Color.Black;
+                //DataSet.GridColor = System.Drawing.Color.FromArgb(50, 50, 50);
+                panelMenu.BackColor = System.Drawing.Color.FromArgb(50, 50, 50);
+                panel2.BackColor = System.Drawing.Color.FromArgb(50, 50, 50);
+                Dark.BackColor = System.Drawing.Color.FromArgb(50, 50, 50);
+                Dark.Image = Resources.Light;
+                label1.ForeColor = System.Drawing.Color.White;
+                label2.ForeColor = System.Drawing.Color.White;
+                label3.ForeColor = System.Drawing.Color.White;
+                titulo.ForeColor = System.Drawing.Color.White;
+            }
+            else
+            {
+                // Fondos blancos y claros
+                panel1.BackColor = System.Drawing.Color.Beige;
+                DataSet.BackgroundColor = System.Drawing.Color.Beige;
+                DataSet.ColumnHeadersDefaultCellStyle.BackColor = System.Drawing.Color.FromArgb(50,50,50); // Beige claro
+                DataSet.ColumnHeadersDefaultCellStyle.ForeColor = System.Drawing.Color.White;
+                DataSet.DefaultCellStyle.BackColor = System.Drawing.Color.White;
+                DataSet.DefaultCellStyle.ForeColor = System.Drawing.Color.Black;
+                DataSet.DefaultCellStyle.SelectionBackColor = System.Drawing.Color.FromArgb(100,100,100); // gris claro
+                DataSet.DefaultCellStyle.SelectionForeColor = System.Drawing.Color.White;
+                DataSet.AlternatingRowsDefaultCellStyle.ForeColor = System.Drawing.Color.Black;
+                //DataSet.GridColor = System.Drawing.Color.WhiteSmoke;
+
+                panelMenu.BackColor = System.Drawing.Color.Beige;
+                panel2.BackColor = System.Drawing.Color.Beige;
+                Dark.BackColor = System.Drawing.Color.Beige;
+                Dark.Image = Resources.Dark; // icono de modo oscuro
+
+                // Texto en negro
+                label1.ForeColor = System.Drawing.Color.Black;
+                label2.ForeColor = System.Drawing.Color.Black;
+                label3.ForeColor = System.Drawing.Color.Black;
+                titulo.ForeColor = System.Drawing.Color.Black;
+
+            }
         }
     }
 }
